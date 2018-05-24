@@ -105,8 +105,7 @@ get_info() {
 get_service() {
     resource=${1}
 
-    port=`echo "${JENKINS_URL}" | sed -e 's|.*://||g' -e 's|/||g' | awk -F: '{print $2}'`
-    pid=`sudo lsof -Pi :${port:-8080} -sTCP:LISTEN -t`
+    pid=`sudo lsof -Pi :${REDIS_PORT:-6379} -sTCP:LISTEN -t`
     rcode="${?}"
     if [[ ${resource} == 'listen' ]]; then
 	if [[ ${rcode} == 0 ]]; then

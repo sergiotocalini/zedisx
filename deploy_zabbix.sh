@@ -4,7 +4,7 @@ ZABBIX_DIR=/etc/zabbix
 
 REDIS_ADDR=${1:-localhost}
 REDIS_PORT=${2:-6379}
-REDIS_PASS=${3}
+REDIS_PASS=${3:-`egrep "^requirepass" /etc/redis/redis.conf | awk '{print $2}'`}
 
 mkdir -p ${ZABBIX_DIR}/scripts/agentd/zedisx
 cp -rpv  ${SOURCE_DIR}/zedisx/zedisx.conf.example   ${ZABBIX_DIR}/scripts/agentd/zedisx/zedisx.conf

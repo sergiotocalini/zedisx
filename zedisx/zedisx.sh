@@ -1,5 +1,6 @@
 #!/usr/bin/env ksh
 PATH=/usr/local/bin:${PATH}
+IFS_DEFAULT="${IFS}"
 
 #################################################################################
 
@@ -14,7 +15,7 @@ APP_VER="0.0.1"
 APP_WEB="http://www.sergiotocalini.com.ar/"
 TIMESTAMP=`date '+%s'`
 CACHE_DIR=${APP_DIR}/tmp
-CACHE_TTL=5                                      # IN MINUTES
+CACHE_TTL=0                                      # IN MINUTES
 #
 #################################################################################
 
@@ -56,23 +57,27 @@ refresh_cache() {
     [[ -d ${CACHE_DIR} ]] || mkdir -p ${CACHE_DIR}
     file=${CACHE_DIR}/data.json
     if [[ $(( `stat -c '%Y' "${file}" 2>/dev/null`+60*${CACHE_TTL} )) -le ${TIMESTAMP} ]]; then
-	redis-cli -a "${REDIS_PASS}" info 2>/dev/null > ${file}
+        if [[ -n ${REDIS_PASS} ]]; then
+	   REDIS_OPTS="-a ${REDIS_PASS}"
+	fi
+	redis-cli ${REDIS_OPTS} info 2>/dev/null > ${file}
     fi
     echo "${file}"
 }
 
 discovery() {
     resource=${1}
+
+    IFS=${IFS_DEFAULT}
     cache=$(refresh_cache)
     if [[ ${resource} == 'databases' ]]; then
 	while read line; do
-	    name=`echo ${line} | cut -d: -f1`
-	    attrs=`echo ${line} | cut -d: -f2`
-	    keys=`echo ${db_attrs} | cut -d, -f1 | cut -d= -f2`
-	    expires=`echo ${db_attrs} | cut -d, -f2 | cut -d= -f2`
-	    avg_ttl=`echo ${db_attrs} | cut -d, -f3 | cut -d= -f2`
-	    echo "${name}|${keys}|${expires}|${avg_ttl}"
-	done < <(sed '/^# Keyscape$/, /#.*/!d' ${cache} | egrep -v "^$|^#" | grep '^db.:')
+	    name=`echo ${line} | awk -F: '{print $1}'`
+	    attrs=`echo ${line} | awk -F: '{print $2}'`
+	    keys=`echo ${attrs} | awk -F, '{print $1}' | awk -F= '{print $2}'`
+	    expires=`echo ${attrs} | awk -F, '{print $2}' | awk -F= '{print $2}'`
+	    echo "${name}|${keys}|${expires}"
+	done < <(sed -n '/^# Keyspace/, /#.*/p' ${cache} | egrep -v "^$|^#" | grep '^db.:')
     fi
     return 0
 }
@@ -83,16 +88,17 @@ get_info() {
     resource=${3}
     param1=${4}
     param2=${5}
-    # if [[ ${type} =~ ^server$ ]]; then
-    # elif [[ ${type} =~ ^clients$ ]]; then
-    # elif [[ ${type} =~ ^memory$ ]]; then
-    # elif [[ ${type} =~ ^persistence$ ]]; then
-    # elif [[ ${type} =~ ^stats$ ]]; then
-    # elif [[ ${type} =~ ^replication$ ]]; then
-    # elif [[ ${type} =~ ^cpu$ ]]; then
-    # elif [[ ${type} =~ ^cluster$ ]]; then
-    # elif [[ ${type} =~ ^keyspace$ ]]; then
-    # fi
+
+    if [[ ${section} == 'count' ]]; then
+       if [[ ${name} == 'databases' ]]; then
+          raw=$(discovery databases)
+          res=`echo "${raw}" | wc -l`
+       fi
+    else
+       cache=$(refresh_cache)
+       value_map=`sed -n "/^# ${section}/, /#.*/p" ${cache}`
+       res=`echo "${value_map}" | egrep "^${name}:" | awk -F: '{print $2}' | awk '{$1=$1};1'`
+    fi
     echo ${res:-0}
 }
 
@@ -147,10 +153,9 @@ if [[ ${JSON} -eq 1 ]]; then
     rval=$(discovery ${ARGS[*]})
     echo '{'
     echo '   "data":['
-    count=0
+    count=1
     while read line; do
-	let "count=count+1"
-	[[ ${line} == '' ]] && continue
+	if [[ ${line} != '' ]]; then
         IFS="|" values=(${line})
         output='{ '
         for val_index in ${!values[*]}; do
@@ -164,6 +169,8 @@ if [[ ${JSON} -eq 1 ]]; then
             output="${output},"
         fi
         echo "      ${output}"
+        fi
+	let "count=count+1"
     done <<< ${rval}
     echo '   ]'
     echo '}'
@@ -174,8 +181,8 @@ else
     elif [[ ${SECTION} == 'service' ]]; then
 	rval=$( get_service ${ARGS[*]} )
 	rcode="${?}"	
-    else
-	rval=$( get_info ${SECTION} ${ARGS[*]} )
+    elif [[ ${SECTION} == 'info' ]]; then
+	rval=$( get_info ${ARGS[*]} )
 	rcode="${?}"
     fi
     echo ${rval:-0} | sed "s/null/0/g"

@@ -1,0 +1,2 @@
+# zedisx
+Zabbix Agent - Redis

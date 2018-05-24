@@ -102,6 +102,20 @@ get_info() {
     echo ${res:-0}
 }
 
+get_dbstats() {
+    dbname=${1}
+    resource=${2}
+
+    cache=$(refresh_cache)
+    raw=`sed -n '/^# Keyspace/, /#.*/p' ${cache} | egrep -v "^$|^#" | egrep "^${dbname}:"`
+    if [[ ${resource} == 'keys' ]]; then
+	res=`echo ${line} | awk -F: '{print $2}' | awk -F, '{print $1}' | awk -F= '{print $2}'`
+    elif [[ ${resource} == 'expires' ]]; then
+	res=`echo ${line} | awk -F: '{print $2}' | awk -F, '{print $2}' | awk -F= '{print $2}'`
+    fi
+    echo ${res:-0}
+}
+
 get_service() {
     resource=${1}
 
@@ -182,6 +196,9 @@ else
 	rcode="${?}"	
     elif [[ ${SECTION} == 'info' ]]; then
 	rval=$( get_info ${ARGS[*]} )
+	rcode="${?}"
+    elif [[ ${SECTION} == 'database' ]]; then
+	rval=$( get_dbstats ${ARGS[*]} )
 	rcode="${?}"
     fi
     echo ${rval:-0} | sed "s/null/0/g"

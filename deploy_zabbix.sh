@@ -10,6 +10,7 @@ mkdir -p ${ZABBIX_DIR}/scripts/agentd/zedisx
 cp -rpv  ${SOURCE_DIR}/zedisx/zedisx.conf.example   ${ZABBIX_DIR}/scripts/agentd/zedisx/zedisx.conf
 cp -rpv  ${SOURCE_DIR}/zedisx/zedisx.sh             ${ZABBIX_DIR}/scripts/agentd/zedisx/
 cp -rpv  ${SOURCE_DIR}/zedisx/zabbix_agentd.conf    ${ZABBIX_DIR}/zabbix_agentd.d/zedisx.conf
+cp -rpv  ${SOURCE_DIR}/zedisx/sudoers               /etc/sudoers.d/zabbix_zedisx
 
 regex_array[0]="s|REDIS_ADDR=.*|REDIS_ADDR=\"${REDIS_ADDR}\"|g"
 regex_array[1]="s|REDIS_PORT=.*|REDIS_PORT=\"${REDIS_PORT}\"|g"

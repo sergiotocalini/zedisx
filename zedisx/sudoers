@@ -1,0 +1,4 @@
+Defaults:zabbix !syslog
+Defaults:zabbix !requiretty
+
+zabbix ALL=(ALL) NOPASSWD: /etc/zabbix/scripts/agentd/zedisx/zedisx.sh *

@@ -11,7 +11,7 @@ IFS_DEFAULT="${IFS}"
 #
 APP_NAME=$(basename $0)
 APP_DIR=$(dirname $0)
-APP_VER="0.0.1"
+APP_VER="0.0.2"
 APP_WEB="http://www.sergiotocalini.com.ar/"
 TIMESTAMP=`date '+%s'`
 CACHE_DIR=${APP_DIR}/tmp
@@ -119,7 +119,7 @@ get_dbstats() {
 get_service() {
     resource=${1}
 
-    pid=`sudo lsof -Pi :${REDIS_PORT:-6379} -sTCP:LISTEN -t`
+    pid=`lsof -Pi :${REDIS_PORT:-6379} -sTCP:LISTEN -t`
     rcode="${?}"
     if [[ ${resource} == 'listen' ]]; then
 	if [[ ${rcode} == 0 ]]; then
@@ -127,7 +127,7 @@ get_service() {
 	fi
     elif [[ ${resource} == 'uptime' ]]; then
 	if [[ ${rcode} == 0 ]]; then
-	    res=`sudo ps -p ${pid} -o etimes -h`
+	    res=`ps -p ${pid} -o etimes -h`
 	fi
     fi
     echo ${res:-0}
@@ -176,7 +176,7 @@ if [[ ${JSON} -eq 1 ]]; then
             if (( ${val_index}+1 < ${#values[*]} )); then
                 output="${output}, "
             fi
-        done 
+        done
         output+=' }'
         if (( ${count} < `echo ${rval}|wc -l` )); then
             output="${output},"
@@ -193,7 +193,7 @@ else
         rcode="${?}"
     elif [[ ${SECTION} == 'service' ]]; then
 	rval=$( get_service ${ARGS[*]} )
-	rcode="${?}"	
+	rcode="${?}"
     elif [[ ${SECTION} == 'info' ]]; then
 	rval=$( get_info ${ARGS[*]} )
 	rcode="${?}"

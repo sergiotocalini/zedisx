@@ -48,7 +48,7 @@ the installation.
 
 ```bash
 ~# git clone https://github.com/sergiotocalini/zedisx.git
-~# ./zedisx/deploy_zabbix.sh
+~# sudo ./zedisx/deploy_zabbix.sh
 ~# sudo systemctl restart zabbix-agent
 ```
 

@@ -37,8 +37,8 @@ zabbix	ALL=(ALL)  NOPASSWD:ALL
 Defaults:zabbix !syslog
 Defaults:zabbix !requiretty
 
-zabbix	ALL=(ALL)  NOPASSWD:lsof *
-zabbix	ALL=(ALL)  NOPASSWD:ps *
+zabbix ALL=(ALL) NOPASSWD: /usr/bin/lsof *
+zabbix ALL=(ALL) NOPASSWD: /bin/ps *
 ~#
 ```
 
